@@ -4,7 +4,8 @@ import {
   Wrench, Search, Globe, Scissors, Scale, Eye, 
   Upload, Folder, Trash2, Download, FileText, 
   CheckCircle, AlertCircle, ChevronRight, Menu,
-  Settings, ListCheck, ArrowLeft, Play, Undo2, Filter, Type, X
+  Settings, ListCheck, ArrowLeft, Play, Undo2, Filter, Type, X,
+  Bold, Italic, Underline
 } from 'lucide-react';
 import { ProcessedFile, TabId, LogEntry, HierarchySkip } from './types';
 
@@ -72,6 +73,34 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertTag = (openTag: string, closeTag: string = '') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    let replacement = '';
+    if (closeTag) {
+      replacement = `${openTag}${selectedText}${closeTag}`;
+    } else {
+      // For self-closing tags like <br>
+      replacement = `${selectedText}${openTag}`;
+    }
+
+    const newContent = text.substring(0, start) + replacement + text.substring(end);
+    handleContentChange(newContent);
+
+    // Restore focus and selection
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + openTag.length + selectedText.length + closeTag.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     setLogs(prev => [{
@@ -607,17 +636,53 @@ const App: React.FC = () => {
               </aside>
 
               {/* אזור העריכה */}
-              <div className="flex-1 relative min-h-0 h-full">
-                <textarea
-                  ref={textareaRef}
-                  value={loadedFiles[previewIdx]?.content || ''}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  onFocus={() => pushToHistory()}
-                  className="w-full h-full bg-white p-8 rounded-2xl border border-slate-200 font-['Assistant'] text-lg leading-[1.6] text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-auto shadow-inner"
-                  dir="rtl"
-                  placeholder="אין תוכן להצגה או עריכה"
-                  style={{ fontFeatureSettings: '"kern" 1' }}
-                />
+              <div className="flex-1 flex flex-col min-h-0 h-full gap-4">
+                {/* סרגל עיצוב טקסט */}
+                <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-50 border border-slate-200 rounded-xl shrink-0">
+                  <div className="flex items-center gap-1 px-2 border-l border-slate-200 ml-2">
+                    {['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].map(h => (
+                      <button
+                        key={h}
+                        onClick={() => insertTag(`<${h.toLowerCase()}>`, `</${h.toLowerCase()}>`)}
+                        className="px-2 py-1 text-[10px] font-bold bg-white border border-slate-200 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 px-2 border-l border-slate-200 ml-2">
+                    <button onClick={() => insertTag('<b>', '</b>')} className="p-1.5 bg-white border border-slate-200 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors" title="מודגש">
+                      <Bold size={14} />
+                    </button>
+                    <button onClick={() => insertTag('<i>', '</i>')} className="p-1.5 bg-white border border-slate-200 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors" title="נטוי">
+                      <Italic size={14} />
+                    </button>
+                    <button onClick={() => insertTag('<u>', '</u>')} className="p-1.5 bg-white border border-slate-200 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors" title="קו תחתון">
+                      <Underline size={14} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1 px-2">
+                    <button onClick={() => insertTag('<p>', '</p>')} className="px-2 py-1 text-[10px] font-bold bg-white border border-slate-200 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                      P
+                    </button>
+                    <button onClick={() => insertTag('<br>', '')} className="px-2 py-1 text-[10px] font-bold bg-white border border-slate-200 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                      BR
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 relative min-h-0">
+                  <textarea
+                    ref={textareaRef}
+                    value={loadedFiles[previewIdx]?.content || ''}
+                    onChange={(e) => handleContentChange(e.target.value)}
+                    onFocus={() => pushToHistory()}
+                    className="w-full h-full bg-white p-8 rounded-2xl border border-slate-200 font-['Assistant'] text-lg leading-[1.6] text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-auto shadow-inner"
+                    dir="rtl"
+                    placeholder="אין תוכן להצגה או עריכה"
+                    style={{ fontFeatureSettings: '"kern" 1' }}
+                  />
+                </div>
               </div>
             </div>
           </div>
