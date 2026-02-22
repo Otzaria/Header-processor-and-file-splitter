@@ -53,18 +53,37 @@ const App: React.FC = () => {
 
   const [hierSkip, setHierSkip] = useState<HierarchySkip>({ h1: false, h2: false, h3: false });
   const [previewIdx, setPreviewIdx] = useState(0);
+  const [debouncedContent, setDebouncedContent] = useState('');
 
   const currentFileContent = loadedFiles[previewIdx]?.content;
-  const previewHeaders = React.useMemo(() => {
-    if (!currentFileContent) return [];
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(currentFileContent, 'text/html');
-    return Array.from(doc.querySelectorAll('h1, h2, h3, h4')).map(h => ({
-      tagName: h.tagName,
-      textContent: h.textContent || '',
-      outerHTML: h.outerHTML
-    }));
+
+  // Debounce content updates for header scanning to keep typing smooth
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedContent(currentFileContent || '');
+    }, 500);
+    return () => clearTimeout(timer);
   }, [currentFileContent]);
+
+  const previewHeaders = React.useMemo(() => {
+    if (!debouncedContent) return [];
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(debouncedContent, 'text/html');
+    const nodes = Array.from(doc.querySelectorAll('h1, h2, h3, h4'));
+    
+    const htmlCounts: Record<string, number> = {};
+    return nodes.map(h => {
+      const html = h.outerHTML;
+      const count = htmlCounts[html] || 0;
+      htmlCounts[html] = count + 1;
+      return {
+        tagName: h.tagName,
+        textContent: h.textContent || '',
+        outerHTML: html,
+        occurrenceIndex: count
+      };
+    });
+  }, [debouncedContent]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -179,15 +198,18 @@ const App: React.FC = () => {
       const topPos = marker.offsetTop;
       document.body.removeChild(mirror);
 
-      // Smooth scroll to the calculated position
+      // Use 'auto' instead of 'smooth' for immediate response as requested
       textarea.scrollTo({
         top: topPos - 20,
-        behavior: 'smooth'
+        behavior: 'auto'
       });
 
       // Visual feedback: focus and set cursor at the start of the header
-      textarea.focus();
-      textarea.setSelectionRange(index, index);
+      // Use setTimeout to ensure focus doesn't interrupt the scroll or get lost in re-renders
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(index, index);
+      }, 0);
     }
   }, [previewIdx]);
 
@@ -915,22 +937,19 @@ const App: React.FC = () => {
                   {/* סרגל ניווט כותרות */}
                   <aside className="w-64 border border-slate-200 rounded-xl bg-slate-50 overflow-y-auto p-4 flex flex-col gap-1 shrink-0">
                     <div className="text-xs font-bold text-slate-400 mb-2 border-b border-slate-200 pb-2">ניווט כותרות</div>
-                    {previewHeaders.length > 0 ? previewHeaders.map((h, i) => {
-                      const occurrenceIndex = previewHeaders.slice(0, i).filter(prevH => prevH.outerHTML === h.outerHTML).length;
-                      return (
-                        <button
-                          key={i}
-                          onClick={() => scrollToHeader(h.outerHTML, occurrenceIndex)}
-                          className={`text-right text-[11px] p-1.5 rounded hover:bg-white transition-all border-r-2 ${
-                            h.tagName === 'H1' ? 'font-bold border-blue-500 bg-blue-50/50' : 
-                            h.tagName === 'H2' ? 'mr-2 border-blue-300' : 
-                            'mr-4 border-slate-200'
-                          }`}
-                        >
-                          {h.textContent}
-                        </button>
-                      );
-                    }) : <div className="text-xs text-slate-400 italic">לא נמצאו כותרות</div>}
+                    {previewHeaders.length > 0 ? previewHeaders.map((h, i) => (
+                      <button
+                        key={i}
+                        onClick={() => scrollToHeader(h.outerHTML, h.occurrenceIndex)}
+                        className={`text-right text-[11px] p-1.5 rounded hover:bg-white transition-all border-r-2 ${
+                          h.tagName === 'H1' ? 'font-bold border-blue-500 bg-blue-50/50' : 
+                          h.tagName === 'H2' ? 'mr-2 border-blue-300' : 
+                          'mr-4 border-slate-200'
+                        }`}
+                      >
+                        {h.textContent}
+                      </button>
+                    )) : <div className="text-xs text-slate-400 italic">לא נמצאו כותרות</div>}
                   </aside>
 
                   {/* אזור העריכה */}
