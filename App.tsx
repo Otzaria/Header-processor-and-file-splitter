@@ -251,27 +251,24 @@ const App: React.FC = () => {
   const applyGlobalReplace = () => {
     if (!globalFind) return;
     pushToHistory();
-    const regex = new RegExp(globalFind.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    
+    const escapedFind = globalFind.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedFind, 'g');
+    
     let totalReplacements = 0;
     let filesAffected = 0;
 
     const nextFiles = loadedFiles.map(f => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(f.content, 'text/html');
-      let changedInFile = false;
+      const originalContent = f.content;
+      const matches = originalContent.match(regex);
       
-      doc.body.querySelectorAll('*').forEach(el => {
-        if (el.children.length === 0 && el.textContent?.trim() !== "") {
-          const matches = el.innerHTML.match(regex);
-          if (matches) {
-            totalReplacements += matches.length;
-            el.innerHTML = el.innerHTML.replace(regex, globalReplace);
-            changedInFile = true;
-          }
-        }
-      });
-      if (changedInFile) filesAffected++;
-      return { ...f, content: doc.body.innerHTML };
+      if (matches) {
+        const newContent = originalContent.replace(regex, globalReplace);
+        totalReplacements += matches.length;
+        filesAffected++;
+        return { ...f, content: newContent };
+      }
+      return f;
     });
 
     setLoadedFiles(nextFiles);
