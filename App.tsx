@@ -98,12 +98,14 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isProgrammaticFocus = useRef(false);
 
   // --- לוגיקת ניווט וגלילה מעודכנת ---
   const scrollToHeader = useCallback((startIndex: number, length: number) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    isProgrammaticFocus.current = true;
     textarea.focus();
     // בחירת הטקסט גורמת ל-textarea לגלול אוטומטית למיקום
     textarea.setSelectionRange(startIndex, startIndex + length);
@@ -111,6 +113,7 @@ const App: React.FC = () => {
     // ביטול הבחירה הכחולה אחרי רגע והשארת הסמן שם
     setTimeout(() => {
       textarea.setSelectionRange(startIndex, startIndex);
+      isProgrammaticFocus.current = false;
     }, 150);
   }, []);
 
@@ -734,7 +737,11 @@ const App: React.FC = () => {
                     ref={textareaRef}
                     value={loadedFiles[previewIdx]?.content || ''}
                     onChange={(e) => handleContentChange(e.target.value)}
-                    onFocus={() => pushToHistory()}
+                    onFocus={() => {
+                      if (!isProgrammaticFocus.current) {
+                        pushToHistory();
+                      }
+                    }}
                     className="w-full h-full bg-white p-8 rounded-2xl border border-slate-200 font-['Assistant'] text-lg leading-[1.6] text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-auto shadow-inner"
                     dir="rtl"
                     placeholder="אין תוכן להצגה או עריכה"
