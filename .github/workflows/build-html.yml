@@ -1,18 +1,15 @@
-name: Build Single HTML
+name: Build Single HTML and Create Release
 
 on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # הוספת הרשאות כתיבה כדי ש-Actions יוכל ליצור תגית
     permissions:
-      contents: write
+      contents: write # נדרש ליצירת Release והעלאת קבצים
       
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # חשוב כדי להביא את היסטוריית התגיות
 
       - uses: actions/setup-node@v4
         with:
@@ -22,20 +19,14 @@ jobs:
       - run: npm install vite-plugin-singlefile --save-dev
       - run: npm run build
 
-      - name: Upload HTML
-        uses: actions/upload-artifact@v4
+      # שלב יצירת ה-Release והעלאת הקובץ
+      - name: Create Release and Upload Asset
+        uses: softprops/action-gh-release@v2
         with:
-          name: my-single-page-app
-          path: dist/index.html
-
-      # שלב חדש: יצירת תגית דחיפתה ל-GitHub
-      - name: Create and Push Tag
-        run: |
-          # יצירת שם תגית ייחודי (למשל build-מספר הרצה)
-          TAG_NAME="build-${{ github.run_number }}"
-          
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
+          tag_name: "v1.0.${{ github.run_number }}"
+          name: "Release v1.0.${{ github.run_number }}"
+          files: dist/index.html
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
