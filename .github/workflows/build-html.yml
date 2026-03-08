@@ -6,20 +6,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # נדרש ליצירת Release והעלאת קבצים
-      
+      contents: write # נדרש ליצירת Release
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: npm install
-      - run: npm install vite-plugin-singlefile --save-dev
-      - run: npm run build
+      - name: Install Dependencies and Build
+        run: |
+          # יצירת package.json בסיסי אם הוא לא קיים כדי למנוע שגיאות התקנה
+          if [ ! -f package.json ]; then npm init -y; fi
+          
+          # התקנת Vite והתוסף שאחראי על איחוד הקבצים לקובץ אחד
+          npm install vite vite-plugin-singlefile --save-dev
+          
+          # יצירת קובץ הגדרות זמני עבור Vite שמפעיל את ה-SingleFile
+          echo "import { defineConfig } from 'vite'; import { viteSingleFile } from 'vite-plugin-singlefile'; export default defineConfig({ plugins: [viteSingleFile()] });" > vite.config.js
+          
+          # הרצת ה-Build - זה ייצור קובץ index.html בתוך תיקיית dist
+          npx vite build
 
-      # שלב יצירת ה-Release והעלאת הקובץ
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
