@@ -18,19 +18,14 @@ jobs:
 
       - name: Install Dependencies and Build
         run: |
-          # יצירת package.json בסיסי אם הוא לא קיים כדי למנוע שגיאות התקנה
           if [ ! -f package.json ]; then npm init -y; fi
-          
-          # התקנת Vite והתוסף שאחראי על איחוד הקבצים לקובץ אחד
           npm install vite vite-plugin-singlefile --save-dev
-          
-          # יצירת קובץ הגדרות זמני עבור Vite שמפעיל את ה-SingleFile
           echo "import { defineConfig } from 'vite'; import { viteSingleFile } from 'vite-plugin-singlefile'; export default defineConfig({ plugins: [viteSingleFile()] });" > vite.config.js
-          
-          # הרצת ה-Build - זה ייצור קובץ index.html בתוך תיקיית dist
           npx vite build
 
+      # --- אפשרות 1: יצירת Release (רק בענף main) ---
       - name: Create Release and Upload Asset
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "v1.0.${{ github.run_number }}"
@@ -40,3 +35,11 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- אפשרות 2: שמירת הקובץ כ-Artifact (בכל ענף שאינו main) ---
+      - name: Upload Build Artifact
+        if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ github.ref_name }}
+          path: dist/index.html
