@@ -6,10 +6,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # נדרש ליצירת Release
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
+
+      # --- צעד חדש: קריאת הגרסה מהקובץ ---
+      - name: Read version from file
+        id: get_version
+        run: |
+          # נניח ששם הקובץ הוא version.txt והוא מכיל למשל: 2.5
+          # אם הקובץ לא קיים, נשתמש בברירת מחדל 1.0
+          VERSION=$(cat version.txt 2>/dev/null || echo "1.0")
+          
+          # יצירת תג ייחודי שמשלב את התוכן מהקובץ + מספר הריצה של GitHub
+          # זה מונע שגיאות אם דחפת קוד פעמיים בלי לעדכן את הקובץ
+          echo "FINAL_TAG=v${VERSION}.${{ github.run_number }}" >> $GITHUB_ENV
+          echo "DISPLAY_NAME=Release ${VERSION} (Build ${{ github.run_number }})" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -23,20 +36,20 @@ jobs:
           echo "import { defineConfig } from 'vite'; import { viteSingleFile } from 'vite-plugin-singlefile'; export default defineConfig({ plugins: [viteSingleFile()] });" > vite.config.js
           npx vite build
 
-      # --- אפשרות 1: יצירת Release (רק בענף main) ---
+      # --- אפשרות 1: יצירת Release (מעודכן עם המשתנים החדשים) ---
       - name: Create Release and Upload Asset
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v1.0.${{ github.run_number }}"
-          name: "Release v1.0.${{ github.run_number }}"
+          tag_name: ${{ env.FINAL_TAG }}
+          name: ${{ env.DISPLAY_NAME }}
           files: dist/index.html
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # --- אפשרות 2: שמירת הקובץ כ-Artifact (בכל ענף שאינו main) ---
+      # --- אפשרות 2: שמירת Artifact ---
       - name: Upload Build Artifact
         if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
