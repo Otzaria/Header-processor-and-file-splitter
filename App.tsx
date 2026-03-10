@@ -117,21 +117,25 @@ const App: React.FC = () => {
     isProgrammaticFocus.current = true;
     textarea.focus();
 
-    // 2. גלילה למקום אחרי השהיה קצרה כדי לוודא שהפוקוס הסתיים
+    // 2. "ניעור" המיקום כדי להכריח את הדפדפן לחשב גלילה מחדש
+    // עוברים לסוף הטקסט לרגע
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    // 3. גלילה ליעד אחרי השהיה קצרה מאוד
     scrollTimeoutRef.current = setTimeout(() => {
       if (textareaRef.current) {
-        // הגדרת הבחירה גורמת לדפדפן לגלוש למקום
+        // הגדרת הבחירה ליעד גורמת לדפדפן לגלוש לשם בוודאות
         textareaRef.current.setSelectionRange(startIndex, startIndex + length);
 
-        // 3. ניקוי הסימון הכחול אחרי שהגלילה הסתיימה
+        // 4. ניקוי הסימון הכחול אחרי שהגלילה הסתיימה
         scrollTimeoutRef.current = setTimeout(() => {
           if (textareaRef.current) {
             textareaRef.current.setSelectionRange(startIndex, startIndex);
           }
           isProgrammaticFocus.current = false;
-        }, 200);
+        }, 300);
       }
-    }, 50);
+    }, 30);
   }, []);
 
   const previewHeaders = React.useMemo(() => {
@@ -727,6 +731,7 @@ const App: React.FC = () => {
                 {previewHeaders.length > 0 ? previewHeaders.map((h, i) => (
                   <button
                     key={i}
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => scrollToHeader(h.startIndex, h.length)}
                     className={`text-right text-[11px] p-1.5 border-r-2 transition-colors hover:bg-white flex flex-col items-start w-full ${
                       h.tagName === 'H1' ? 'font-bold border-blue-500 bg-blue-50/50' : 
