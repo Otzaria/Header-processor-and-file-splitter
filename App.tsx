@@ -101,35 +101,48 @@ const App: React.FC = () => {
   const folderInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isProgrammaticFocus = useRef(false);
+  const scrollTimeoutRef = useRef<any>(null);
 
   // --- לוגיקת ניווט וגלילה מעודכנת ---
   const scrollToHeader = useCallback((startIndex: number, length: number) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // פונקציה שמבצעת את הפוקוס והבחירה שגורמת לגלילה
-    const performScroll = () => {
-      if (textareaRef.current) {
-        isProgrammaticFocus.current = true;
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(startIndex, startIndex + length);
-        // מחזירים למצב רגיל אחרי זמן קצר
-        setTimeout(() => { isProgrammaticFocus.current = false; }, 100);
+    // ביטול ניסיונות קודמים אם יש
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
+    const perform = (isFinal: boolean) => {
+      if (!textareaRef.current) return;
+      
+      isProgrammaticFocus.current = true;
+      
+      // הגדרת המיקום (לפעמים עובד טוב יותר לפני הפוקוס)
+      textareaRef.current.selectionStart = startIndex;
+      textareaRef.current.selectionEnd = startIndex + length;
+      
+      // מתן פוקוס
+      textareaRef.current.focus();
+      
+      // וידוא המיקום שוב אחרי הפוקוס
+      textareaRef.current.setSelectionRange(startIndex, startIndex + length);
+      
+      if (isFinal) {
+        scrollTimeoutRef.current = setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.setSelectionRange(startIndex, startIndex);
+          }
+          isProgrammaticFocus.current = false;
+        }, 150);
       }
     };
 
-    // ניסיון ראשון מיידי
-    performScroll();
-
-    // ניסיון נוסף אחרי השהיה קצת יותר ארוכה (ה"טיפה" שציינת) כדי לוודא הצלחה
-    setTimeout(performScroll, 300);
-
-    // ניקוי הבחירה הכחולה והשארת הסמן בלבד
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.setSelectionRange(startIndex, startIndex);
-      }
-    }, 600);
+    // ביצוע מיידי בתוך frame של הדפדפן
+    requestAnimationFrame(() => perform(false));
+    
+    // ניסיון נוסף קצר מאוד אחרי כדי לוודא יציבות
+    scrollTimeoutRef.current = setTimeout(() => perform(true), 50);
   }, []);
 
   const previewHeaders = React.useMemo(() => {
