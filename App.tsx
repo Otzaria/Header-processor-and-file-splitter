@@ -108,41 +108,30 @@ const App: React.FC = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // ביטול ניסיונות קודמים אם יש
+    // ביטול כל פעולה קודמת שעדיין רצה
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    const perform = (isFinal: boolean) => {
-      if (!textareaRef.current) return;
-      
-      isProgrammaticFocus.current = true;
-      
-      // הגדרת המיקום (לפעמים עובד טוב יותר לפני הפוקוס)
-      textareaRef.current.selectionStart = startIndex;
-      textareaRef.current.selectionEnd = startIndex + length;
-      
-      // מתן פוקוס
-      textareaRef.current.focus();
-      
-      // וידוא המיקום שוב אחרי הפוקוס
-      textareaRef.current.setSelectionRange(startIndex, startIndex + length);
-      
-      if (isFinal) {
+    // 1. פוקוס ראשון (כפי שביקשת)
+    isProgrammaticFocus.current = true;
+    textarea.focus();
+
+    // 2. גלילה למקום אחרי השהיה קצרה כדי לוודא שהפוקוס הסתיים
+    scrollTimeoutRef.current = setTimeout(() => {
+      if (textareaRef.current) {
+        // הגדרת הבחירה גורמת לדפדפן לגלוש למקום
+        textareaRef.current.setSelectionRange(startIndex, startIndex + length);
+
+        // 3. ניקוי הסימון הכחול אחרי שהגלילה הסתיימה
         scrollTimeoutRef.current = setTimeout(() => {
           if (textareaRef.current) {
             textareaRef.current.setSelectionRange(startIndex, startIndex);
           }
           isProgrammaticFocus.current = false;
-        }, 150);
+        }, 200);
       }
-    };
-
-    // ביצוע מיידי בתוך frame של הדפדפן
-    requestAnimationFrame(() => perform(false));
-    
-    // ניסיון נוסף קצר מאוד אחרי כדי לוודא יציבות
-    scrollTimeoutRef.current = setTimeout(() => perform(true), 50);
+    }, 50);
   }, []);
 
   const previewHeaders = React.useMemo(() => {
