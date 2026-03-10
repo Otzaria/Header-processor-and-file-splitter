@@ -100,6 +100,7 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isProgrammaticFocus = useRef(false);
 
   // --- לוגיקת ניווט וגלילה מעודכנת ---
   const scrollToHeader = useCallback((startIndex: number, length: number) => {
@@ -109,23 +110,26 @@ const App: React.FC = () => {
     // פונקציה שמבצעת את הפוקוס והבחירה שגורמת לגלילה
     const performScroll = () => {
       if (textareaRef.current) {
+        isProgrammaticFocus.current = true;
         textareaRef.current.focus();
         textareaRef.current.setSelectionRange(startIndex, startIndex + length);
+        // מחזירים למצב רגיל אחרי זמן קצר
+        setTimeout(() => { isProgrammaticFocus.current = false; }, 100);
       }
     };
 
     // ניסיון ראשון מיידי
     performScroll();
 
-    // ניסיון נוסף לאחר השהיה קצרה כדי לוודא שהגלילה התבצעה גם אם היה רינדור
-    setTimeout(performScroll, 100);
+    // ניסיון נוסף אחרי השהיה קצת יותר ארוכה (ה"טיפה" שציינת) כדי לוודא הצלחה
+    setTimeout(performScroll, 300);
 
     // ניקוי הבחירה הכחולה והשארת הסמן בלבד
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.setSelectionRange(startIndex, startIndex);
       }
-    }, 250);
+    }, 600);
   }, []);
 
   const previewHeaders = React.useMemo(() => {
@@ -777,7 +781,11 @@ const App: React.FC = () => {
                     ref={textareaRef}
                     value={loadedFiles[previewIdx]?.content || ''}
                     onChange={(e) => handleContentChange(e.target.value)}
-                    onFocus={() => pushToHistory()}
+                    onFocus={() => {
+                      if (!isProgrammaticFocus.current) {
+                        pushToHistory();
+                      }
+                    }}
                     className="w-full h-full bg-white p-8 rounded-2xl border border-slate-200 font-['Assistant'] text-lg leading-[1.6] text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-auto shadow-inner"
                     dir="rtl"
                     placeholder="אין תוכן להצגה או עריכה"
