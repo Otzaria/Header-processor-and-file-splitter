@@ -117,24 +117,14 @@ const App: React.FC = () => {
     isProgrammaticFocus.current = true;
     textarea.focus();
 
-    // 2. איפוס המיקום לתחילת הטקסט כדי להכריח את הדפדפן "להתעורר"
-    textarea.setSelectionRange(0, 0);
-    textarea.scrollTop = 0;
+    // 2. טריק הגלילה: גוללים לסוף כדי שהבחירה הבאה תגיע מלמטה ותיעצר בראש העורך
+    textarea.scrollTop = textarea.scrollHeight;
 
-    // 3. ביצוע הגלילה האמיתית לאחר השהיה קצרה כדי שהפוקוס ייקלט
+    // 3. ביצוע הגלילה האמיתית לאחר השהיה קצרה מאוד
     scrollTimeoutRef.current = setTimeout(() => {
       if (textareaRef.current) {
-        // סימון הטקסט (גורם לדפדפן לגלוש לשם)
+        // הגדרת הבחירה גורמת לדפדפן לגלוש ליעד ולהציב אותו בראש התצוגה
         textareaRef.current.setSelectionRange(startIndex, startIndex + length);
-
-        // חישוב ידני של המיקום כדי להביא את הכותרת לראש העורך
-        // גופן Assistant בגודל 18px (text-lg) עם leading-1.6 נותן כ-29 פיקסלים לשורה
-        const textBefore = textareaRef.current.value.substring(0, startIndex);
-        const lineCount = textBefore.split('\n').length;
-        const lineHeight = 28.8; // 18 * 1.6
-        
-        // גלילה ידנית למיקום השורה (פחות באפר קטן)
-        textareaRef.current.scrollTop = (lineCount - 1) * lineHeight;
 
         // 4. ניקוי הסימון הכחול והשארת הסמן בלבד
         scrollTimeoutRef.current = setTimeout(() => {
@@ -142,9 +132,9 @@ const App: React.FC = () => {
             textareaRef.current.setSelectionRange(startIndex, startIndex);
           }
           isProgrammaticFocus.current = false;
-        }, 400);
+        }, 200);
       }
-    }, 100);
+    }, 20);
   }, []);
 
   const previewHeaders = React.useMemo(() => {
