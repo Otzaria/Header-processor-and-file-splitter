@@ -140,8 +140,12 @@ const App: React.FC = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    // שמירת מצב להיסטוריה לפני השינוי
+    pushToHistory();
+
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
+    const scrollTop = textarea.scrollTop;
     const text = textarea.value;
     const selectedText = text.substring(start, end);
     
@@ -156,10 +160,13 @@ const App: React.FC = () => {
     handleContentChange(newContent);
 
     setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + openTag.length + selectedText.length + closeTag.length;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newCursorPos = start + openTag.length + selectedText.length + closeTag.length;
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        textareaRef.current.scrollTop = scrollTop;
+      }
+    }, 10);
   };
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
@@ -740,7 +747,7 @@ const App: React.FC = () => {
                     ref={textareaRef}
                     value={loadedFiles[previewIdx]?.content || ''}
                     onChange={(e) => handleContentChange(e.target.value)}
-                    onFocus={() => pushToHistory()}
+                    onMouseDown={() => pushToHistory()}
                     className="w-full h-full bg-white p-8 rounded-2xl border border-slate-200 font-['Assistant'] text-lg leading-[1.6] text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-auto shadow-inner"
                     dir="rtl"
                     placeholder="אין תוכן להצגה או עריכה"
