@@ -106,14 +106,26 @@ const App: React.FC = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    textarea.focus();
-    // בחירת הטקסט גורמת ל-textarea לגלול אוטומטית למיקום
-    textarea.setSelectionRange(startIndex, startIndex + length);
+    // פונקציה שמבצעת את הפוקוס והבחירה שגורמת לגלילה
+    const performScroll = () => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(startIndex, startIndex + length);
+      }
+    };
 
-    // ביטול הבחירה הכחולה אחרי רגע והשארת הסמן שם
+    // ניסיון ראשון מיידי
+    performScroll();
+
+    // ניסיון נוסף לאחר השהיה קצרה כדי לוודא שהגלילה התבצעה גם אם היה רינדור
+    setTimeout(performScroll, 100);
+
+    // ניקוי הבחירה הכחולה והשארת הסמן בלבד
     setTimeout(() => {
-      textarea.setSelectionRange(startIndex, startIndex);
-    }, 150);
+      if (textareaRef.current) {
+        textareaRef.current.setSelectionRange(startIndex, startIndex);
+      }
+    }, 250);
   }, []);
 
   const previewHeaders = React.useMemo(() => {
