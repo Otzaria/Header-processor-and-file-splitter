@@ -167,7 +167,7 @@ const App: React.FC = () => {
         textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
         textareaRef.current.scrollTop = scrollTop;
       }
-    }, 10);
+    }, 0);
   };
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
