@@ -12,12 +12,14 @@
   "dependencies": {
     "@google/genai": "^1.41.0",
     "jszip": "^3.10.1",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.574.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "vite-plugin-singlefile": "^2.3.0"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.15",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
