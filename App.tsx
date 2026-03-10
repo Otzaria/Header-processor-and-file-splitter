@@ -100,41 +100,38 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isProgrammaticFocus = useRef(false);
-  const scrollTimeoutRef = useRef<any>(null);
 
   // --- לוגיקת ניווט וגלילה מעודכנת ---
   const scrollToHeader = useCallback((startIndex: number, length: number) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // ביטול כל פעולה קודמת שעדיין רצה
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    // 1. פוקוס ראשון (חובה לפי בקשת המשתמש)
-    isProgrammaticFocus.current = true;
+    // מיקוד ראשוני
     textarea.focus();
-
-    // 2. טריק הגלילה: גוללים לסוף כדי שהבחירה הבאה תגיע מלמטה ותיעצר בראש העורך
-    textarea.scrollTop = textarea.scrollHeight;
-
-    // 3. ביצוע הגלילה האמיתית לאחר השהיה קצרה מאוד
-    scrollTimeoutRef.current = setTimeout(() => {
+    
+    // השהייה קלה כדי להבטיח שהמיקוד הושלם והדפדפן מוכן לגלילה.
+    // לעיתים המיקוד גורם לרינדור מחדש שעלול לבטל את הגלילה האוטומטית.
+    setTimeout(() => {
       if (textareaRef.current) {
-        // הגדרת הבחירה גורמת לדפדפן לגלוש ליעד ולהציב אותו בראש התצוגה
-        textareaRef.current.setSelectionRange(startIndex, startIndex + length);
+        const el = textareaRef.current;
+        
+        // הגדרת הבחירה לסוף הכותרת ואז לתחילתה כדי "לדחוף" את הדפדפן לגלול
+        el.setSelectionRange(startIndex + length, startIndex + length);
+        el.setSelectionRange(startIndex, startIndex + length);
 
-        // 4. ניקוי הסימון הכחול והשארת הסמן בלבד
-        scrollTimeoutRef.current = setTimeout(() => {
+        // טריק נוסף: טשטוש ומיקוד מחדש כפוי כדי להכריח את הדפדפן להציג את הסמן
+        el.blur();
+        el.focus();
+        el.setSelectionRange(startIndex, startIndex + length);
+
+        // ביטול הבחירה הכחולה אחרי רגע והשארת הסמן שם
+        setTimeout(() => {
           if (textareaRef.current) {
             textareaRef.current.setSelectionRange(startIndex, startIndex);
           }
-          isProgrammaticFocus.current = false;
-        }, 200);
+        }, 400);
       }
-    }, 20);
+    }, 100);
   }, []);
 
   const previewHeaders = React.useMemo(() => {
@@ -188,7 +185,7 @@ const App: React.FC = () => {
         textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
         textareaRef.current.scrollTop = scrollTop;
       }
-    }, 0);
+    }, 10);
   };
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
@@ -730,7 +727,6 @@ const App: React.FC = () => {
                 {previewHeaders.length > 0 ? previewHeaders.map((h, i) => (
                   <button
                     key={i}
-                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => scrollToHeader(h.startIndex, h.length)}
                     className={`text-right text-[11px] p-1.5 border-r-2 transition-colors hover:bg-white flex flex-col items-start w-full ${
                       h.tagName === 'H1' ? 'font-bold border-blue-500 bg-blue-50/50' : 
@@ -787,11 +783,7 @@ const App: React.FC = () => {
                     ref={textareaRef}
                     value={loadedFiles[previewIdx]?.content || ''}
                     onChange={(e) => handleContentChange(e.target.value)}
-                    onFocus={() => {
-                      if (!isProgrammaticFocus.current) {
-                        pushToHistory();
-                      }
-                    }}
+                    onFocus={() => pushToHistory()}
                     className="w-full h-full bg-white p-8 rounded-2xl border border-slate-200 font-['Assistant'] text-lg leading-[1.6] text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-auto shadow-inner"
                     dir="rtl"
                     placeholder="אין תוכן להצגה או עריכה"
