@@ -101,19 +101,23 @@ const App: React.FC = () => {
   const folderInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // --- לוגיקת ניווט וגלילה מעודכנת ---
+// --- לוגיקת ניווט וגלילה מעודכנת ---
   const scrollToHeader = useCallback((startIndex: number, length: number) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     textarea.focus();
-    // בחירת הטקסט גורמת ל-textarea לגלול אוטומטית למיקום
+    // בחירת הטקסט גורמת ל-textarea לגלול אוטומטית למיקום (חלקית)
     textarea.setSelectionRange(startIndex, startIndex + length);
 
-    // ביטול הבחירה הכחולה אחרי רגע והשארת הסמן שם
+    // ביטול הבחירה הכחולה אחרי זמן קצר מאוד והשארת הסמן שם
     setTimeout(() => {
       textarea.setSelectionRange(startIndex, startIndex);
-    }, 150);
+      
+      // כפיית גלילה על ידי הסרת פוקוס והחזרתו מיד
+      textarea.blur();
+      textarea.focus();
+    }, 0);
   }, []);
 
   const previewHeaders = React.useMemo(() => {
@@ -136,7 +140,7 @@ const App: React.FC = () => {
     return headers;
   }, [currentFileContent]);
   // --------------------------------
-
+  
   const insertTag = (openTag: string, closeTag: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -609,7 +613,7 @@ const App: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-slate-100">
-           <div className="text-xs text-slate-400 text-center">v3 - Advanced </div>
+           <div className="text-xs text-slate-400 text-center">v3.2 - Advanced </div>
         </div>
       </aside>
 
