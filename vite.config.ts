@@ -6,7 +6,11 @@ import { viteSingleFile } from "vite-plugin-singlefile"
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
   build: {
+    target: 'esnext', // מומלץ כדי לאפשר פיצ'רים מודרניים של JS בתוך הקובץ
     cssCodeSplit: false,
-    assetsInlineLimit: 100000000, // מבטיח שכל הנכסים ייכנסו לקובץ
+    assetsInlineLimit: 100000000, // מבטיח שכל הנכסים (תמונות, סקריפטים) ייכנסו לקובץ
+    rollupOptions: {
+      inlineDynamicImports: true, // קריטי: מוודא שגם ייבוא דינמי לא ייצור קבצים נפרדים
+    },
   },
 })
