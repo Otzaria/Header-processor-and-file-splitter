@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import JSZip from 'jszip';
+import { sameFileSnapshot } from './historySnapshot.js';
 import { 
   Wrench, Search, Globe, Scissors, Scale, Eye, 
   Upload, Folder, Trash2, Download, FileText, 
@@ -63,14 +64,6 @@ const Modal = ({ isOpen, onClose, title, icon: Icon, children }: { isOpen: boole
     </div>
   );
 };
-
-// Files are immutable between edits: every content/name change replaces the file
-// object. A history snapshot therefore needs only identity comparisons, never a
-// deep scan of potentially multi-megabyte HTML strings. Keep originalName and any
-// future file fields covered by the object identity contract.
-export function sameFileSnapshot(a: readonly ProcessedFile[], b: readonly ProcessedFile[]): boolean {
-  return a === b || (a.length === b.length && a.every((file, index) => file === b[index]));
-}
 
 const App: React.FC = () => {
   const [loadedFiles, setLoadedFiles] = useState<ProcessedFile[]>([]);
