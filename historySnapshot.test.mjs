@@ -9,10 +9,16 @@ test('same snapshot or copied array is unchanged', () => {
   assert.equal(sameFileSnapshot(snapshot, snapshot), true);
 });
 
+test('rebuilt but identical files do not add redundant undo history', () => {
+  const original = { name: 'one', content: 'unchanged', originalName: 'one.html' };
+  assert.equal(sameFileSnapshot([original], [{ ...original }]), true);
+});
+
 test('immutable content and name edits both create history states', () => {
   const original = { name: 'one', content: 'before' };
   assert.equal(sameFileSnapshot([original], [{ ...original, content: 'after' }]), false);
   assert.equal(sameFileSnapshot([original], [{ ...original, name: 'two' }]), false);
+  assert.equal(sameFileSnapshot([original], [{ ...original, originalName: 'another.html' }]), false);
 });
 
 test('adding, removing and reordering files are different states', () => {
