@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
 import JSZip from 'jszip';
-import { isEqual } from 'lodash';
 import { 
   Wrench, Search, Globe, Scissors, Scale, Eye, 
   Upload, Folder, Trash2, Download, FileText, 
@@ -64,6 +63,14 @@ const Modal = ({ isOpen, onClose, title, icon: Icon, children }: { isOpen: boole
     </div>
   );
 };
+
+// Files are immutable between edits: every content/name change replaces the file
+// object. A history snapshot therefore needs only identity comparisons, never a
+// deep scan of potentially multi-megabyte HTML strings. Keep originalName and any
+// future file fields covered by the object identity contract.
+export function sameFileSnapshot(a: readonly ProcessedFile[], b: readonly ProcessedFile[]): boolean {
+  return a === b || (a.length === b.length && a.every((file, index) => file === b[index]));
+}
 
 const App: React.FC = () => {
   const [loadedFiles, setLoadedFiles] = useState<ProcessedFile[]>([]);
@@ -190,7 +197,7 @@ const App: React.FC = () => {
 
   const pushToHistory = () => {
     setHistory(prev => {
-      if (prev.length > 0 && isEqual(prev[0], loadedFiles)) {
+      if (prev.length > 0 && sameFileSnapshot(prev[0], loadedFiles)) {
         return prev;
       }
       return [loadedFiles, ...prev].slice(0, 20);
@@ -202,7 +209,7 @@ const App: React.FC = () => {
     
     // Find the first state in history that is different from current
     let targetIdx = 0;
-    while (targetIdx < history.length && isEqual(history[targetIdx], loadedFiles)) {
+    while (targetIdx < history.length && sameFileSnapshot(history[targetIdx], loadedFiles)) {
       targetIdx++;
     }
 
