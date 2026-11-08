@@ -5,7 +5,7 @@ export interface ProcessedFile {
   originalName?: string;
 }
 
-export type TabId = 'process' | 'replace' | 'global' | 'split' | 'fix' | 'preview';
+export type TabId = 'process' | 'replace' | 'global' | 'split' | 'fix' | 'preview' | 'sync_h1';
 
 export interface LogEntry {
   timestamp: string;
