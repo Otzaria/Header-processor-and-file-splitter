@@ -29,22 +29,6 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - name: Recompute lockfile for audit only
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Emit deterministic lockfile snapshot for palmoni5 PR update
-        if: matrix.node == '22'
-        shell: bash
-        run: |
-          node - <<'JS'
-          const fs = require('node:fs');
-          const raw = fs.readFileSync('package-lock.json');
-          const text = raw.toString('base64');
-          console.log('AUDIT_LOCK_BEGIN=' + raw.length);
-          for (let i = 0; i < text.length; i += 2048) {
-            console.log('AUDIT_LOCK_CHUNK_' + String(i / 2048).padStart(4, '0') + '=' + text.slice(i, i + 2048));
-          }
-          console.log('AUDIT_LOCK_END=' + require('node:crypto').createHash('sha256').update(raw).digest('hex'));
-          JS
       - run: npm ci
       - name: History semantic and ordering regressions
         run: npm test
