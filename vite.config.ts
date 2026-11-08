@@ -10,7 +10,9 @@ export default defineConfig({
     cssCodeSplit: false,
     assetsInlineLimit: 100000000, // מבטיח שכל הנכסים (תמונות, סקריפטים) ייכנסו לקובץ
     rollupOptions: {
-      inlineDynamicImports: true, // קריטי: מוודא שגם ייבוא דינמי לא ייצור קבצים נפרדים
+      output: {
+        inlineDynamicImports: true, // שמירת סקריפט יחיד גם בייבוא דינמי
+      },
     },
   },
 })

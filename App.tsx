@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import JSZip from 'jszip';
-import { isEqual } from 'lodash';
+import { sameFileSnapshot } from './historySnapshot.js';
 import { 
   Wrench, Search, Globe, Scissors, Scale, Eye, 
   Upload, Folder, Trash2, Download, FileText, 
@@ -190,7 +190,7 @@ const App: React.FC = () => {
 
   const pushToHistory = () => {
     setHistory(prev => {
-      if (prev.length > 0 && isEqual(prev[0], loadedFiles)) {
+      if (prev.length > 0 && sameFileSnapshot(prev[0], loadedFiles)) {
         return prev;
       }
       return [loadedFiles, ...prev].slice(0, 20);
@@ -202,7 +202,7 @@ const App: React.FC = () => {
     
     // Find the first state in history that is different from current
     let targetIdx = 0;
-    while (targetIdx < history.length && isEqual(history[targetIdx], loadedFiles)) {
+    while (targetIdx < history.length && sameFileSnapshot(history[targetIdx], loadedFiles)) {
       targetIdx++;
     }
 

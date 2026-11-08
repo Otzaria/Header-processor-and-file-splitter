@@ -1,0 +1,38 @@
+name: History snapshot QA
+
+on:
+  pull_request:
+    paths:
+      - 'App.tsx'
+      - 'historySnapshot.*'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/history-snapshot-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - name: History semantic and ordering regressions
+        run: npm test
+      - name: TypeScript static analysis
+        run: npm run lint
+      - name: Production bundle
+        run: npm run build
